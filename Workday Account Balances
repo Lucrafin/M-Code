@@ -2,7 +2,6 @@ let IBUB = ( optional CheckFileName as logical ) =>
 
     let
 
-    R = [
         FolderPathStart = "\\office\aktiehandel\BackOffice Värdepapper Ekonomi\Filer\",
         FolderPath = FolderPathStart & FolderPathEnd,
 
@@ -84,9 +83,8 @@ let IBUB = ( optional CheckFileName as logical ) =>
                     {"Date", type date}
                 }
             )
-    ]
     in
-        R,
+        ChangedType,
 
         documentation = [
             Documentation.Name =  " fxKontoutdrag ",
