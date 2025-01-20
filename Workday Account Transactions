@@ -1,4 +1,4 @@
-let Kontoutdrag = ( optional CheckFileName as logical ) =>
+let Kontoutdrag = ( optional CheckFileName as logical ) as table =>
 
     let
 
