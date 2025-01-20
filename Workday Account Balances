@@ -1,4 +1,4 @@
-let IBUB = ( optional CheckFileName as logical ) =>
+let IBUB = ( optional CheckFileName as logical ) as table =>
 
     let
 
