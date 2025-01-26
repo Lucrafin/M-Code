@@ -1,0 +1,168 @@
+let AccTransAndBF = ( optional CheckFileName as logical ) as table =>
+
+    let
+
+            SourceAccTran = Folder.Files( "\\Skandianet.org\common\SE\LINK\Depaforsakring\WD\Kontoutdrag\2025\2501" ),
+            //SourceAccTran = Folder.Files( "\\office\aktiehandel\BackOffice Värdepapper Ekonomi\Filer\Test för Workday\Sally_TPS" ),
+
+            // Extract file path from metadata after applying filter to the 'Name' column
+            // and take first row of table sorted by 'Date modified' column
+            FilePathAccTran =
+                Table.CombineColumns(
+                    Table.FirstN(
+                        Table.Sort(
+                            Table.SelectRows( 
+                                SourceAccTran, 
+                                each if prCheckFileName = true ?? false then Text.Contains( Text.Lower( [Name] ), "kontoutdrag" ) else true
+                            ),
+                            { "Date modified", Order.Descending }
+                        ),
+                        1
+                    ),
+                    { "Folder Path", "Name" },
+                    Combiner.CombineTextByDelimiter("", QuoteStyle.None),
+                    "File Path"
+                ){0}[File Path],
+            
+            ExcelAccTran = 
+                Table.PromoteHeaders( 
+                    Excel.Workbook(
+                        File.Contents(FilePathAccTran), null, true
+                    ){0}[Data],
+                    [PromoteAllScalars=true] 
+                ),
+
+            FilterOutTotalAccTrans = 
+                Table.SelectRows( 
+                    Table.FillDown( ExcelAccTran, { "Ledger Account" } ),
+                    each not Text.Contains( Text.Lower( [Ledger Account] ), "total" ) and [Accounting Date] <> null
+                ),
+                
+            SplitLAAccTrans = 
+                Table.SplitColumn(
+                    FilterOutTotalAccTrans, 
+                    "Ledger Account", 
+                    Splitter.SplitTextByDelimiter(":", QuoteStyle.Csv), 
+                    {"Account Number", "Account Name"}
+                ),
+
+            SelectColumnsAccTrans = 
+                Table.SelectColumns(
+                    SplitLAAccTrans,
+                    {"Account Number",  "Accounting Date",   "Journal Source", "Translated Amount",   "Product Level 5"}),
+                    
+            ChangedTypeAccTrans = 
+                Table.TransformColumnTypes(
+                    SelectColumnsAccTrans,
+                    {
+                        {"Account Number", Int64.Type}, 
+                        {"Accounting Date", type date}, 
+                        {"Journal Source", type text}, 
+                        {"Translated Amount", type number}, 
+                        {"Product Level 5", Int64.Type}
+                    }
+                ),
+
+            SourceBalanceFw = Folder.Files( "\\Skandianet.org\common\SE\LINK\Depaforsakring\WD\Ingående_Balans\2025\2501" ),
+            //SourceBalanceFw = Folder.Files( "\\office\aktiehandel\BackOffice Värdepapper Ekonomi\Filer\Test för Workday\Sally_TPS" ),
+
+            // Extract file path from metadata after applying filter to the 'Name' column
+            // and take first row of table sorted by 'Date modified' column
+            FilePathBalanceFw =
+                Table.CombineColumns(
+                    Table.FirstN(
+                        Table.Sort(
+                            Table.SelectRows( 
+                                SourceBalanceFw, 
+                                each if prCheckFileName = true ?? false then Text.Contains( Text.Lower( [Name] ), "ib-ub" ) else true
+                            ),
+                            { "Date modified", Order.Descending }
+                        ),
+                        1
+                    ),
+                    { "Folder Path", "Name" },
+                    Combiner.CombineTextByDelimiter("", QuoteStyle.None),
+                    "File Path"
+                ){0}[File Path],
+            
+            ExcelfileBalenceFw = 
+                Excel.Workbook(
+                    File.Contents(FilePathBalanceFw), null, true
+                ){0}[Data],
+
+            FilterOutTotalBalanceFw = 
+                Table.SelectRows( 
+                    ExcelfileBalenceFw, 
+                    each not Text.Contains( Text.Lower( [Column1] ), "total" ) and [Column2] <> "" 
+                    ),
+
+            AddedColumnsBalanceFw = 
+                Table.ExpandRecordColumn(
+                    Table.AddColumn(
+                        FilterOutTotalBalanceFw, 
+                        "Record", 
+                        each [ 
+                                Translated Amount = if Value.Is( [Column15], type text ) and [Column15] <> "" then "Translated Amount" else [Column15],
+                                Journal Source = if Value.Is( [Column15], type text ) and [Column15] <> "" then "Journal Source" else "Balance Forward",
+                                Accounting Date = if Value.Is( [Column15], type text )   // Extract date from column 15 and write it to all rows except header
+                                        then "Accounting Date"
+                                        else Date.AddDays(
+                                                Date.FromText(
+                                                    Text.End( 
+                                                        Text.Combine( 
+                                                            List.Select( 
+                                                                Table.Column( 
+                                                                    FilterOutTotalBalanceFw, "Column15" 
+                                                                ), 
+                                                                each Value.Is( _ , type text ) and _ <> "" 
+                                                            ) 
+                                                        ),  
+                                                        10 
+                                                    )
+                                                ), 
+                                                1
+                                            )
+                        ]
+                    ),
+                    "Record", { "Translated Amount", "Journal Source", "Accounting Date" }
+                ),
+
+            SelectColumnsBalanceFw = 
+                Table.RenameColumns(
+                    Table.SelectColumns(
+                        Table.PromoteHeaders( 
+                            AddedColumnsBalanceFw, 
+                            [PromoteAllScalars=true] 
+                        ),
+                        {"Ledger Account Number", "Journal Source", "Product Level 5", "Translated Amount", "Accounting Date" }
+                    ),
+                    { { "Ledger Account Number", "Account Number" } }
+                ),
+                
+            ChangedTypeBalanceFw = 
+                Table.TransformColumnTypes(
+                    SelectColumnsBalanceFw,
+                    {
+                        {"Account Number", Int64.Type}, 
+                        {"Product Level 5", Int64.Type}, 
+                        {"Accounting Date", type date},
+                        {"Translated Amount", type number},
+                        {"Journal Source", type text}
+                    }
+                ),
+                
+            Filnal = Table.Combine( { ChangedTypeAccTrans, ChangedTypeBalanceFw } )
+        in
+            Filnal,
+
+        documentation = [
+            Documentation.Name =  " fxAccTransAndBF ",
+            Documentation.Description = " Work with Workday files and transform them into the appropriate format for later use. ",
+            Documentation.LongDescription = " The function extracts the file from this path '\\office\aktiehandel\BackOffice Värdepapper Ekonomi\Files\' along with FolderPathEnd. You must enter the valid FolderPathEnd parametar for the file you want to transform. CheckFileName is optional and has to be 'true' if you want to search after the words 'kontoutdrag' and 'ib-ub' in the file names. ",
+            Documentation.Category = " Workday ",
+            Documentation.Source = " GitHub Lucrafin ",
+            Documentation.Version = " 1.0 ",
+            Documentation.Author = " Aleksandar Kovacevic "
+        ]
+in 
+    Value.ReplaceType(AccTransAndBF, Value.ReplaceMetadata(Value.Type(AccTransAndBF), documentation) )
