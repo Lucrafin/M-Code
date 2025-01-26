@@ -158,7 +158,7 @@ let AccTransAndBF = ( optional CheckFileName as logical ) as table =>
         documentation = [
             Documentation.Name =  " fxAccTransAndBF ",
             Documentation.Description = " Work with Workday files and transform them into the appropriate format for later use. ",
-            Documentation.LongDescription = " The function extracts the file from this path '\\office\aktiehandel\BackOffice Värdepapper Ekonomi\Files\' along with FolderPathEnd. You must enter the valid FolderPathEnd parametar for the file you want to transform. CheckFileName is optional and has to be 'true' if you want to search after the words 'kontoutdrag' and 'ib-ub' in the file names. ",
+            Documentation.LongDescription = " The function extracts the file from this path '\\Skandianet.org\common\SE\LINK\Depaforsakring\WD\Kontoutdrag\2025\2501'. CheckFileName is optional and has to be 'true' if you want to search after the words 'kontoutdrag' and 'ib-ub' in the file names. ",
             Documentation.Category = " Workday ",
             Documentation.Source = " GitHub Lucrafin ",
             Documentation.Version = " 1.0 ",
