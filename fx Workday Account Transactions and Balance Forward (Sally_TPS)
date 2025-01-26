@@ -13,7 +13,7 @@ let AccTransAndBF = ( optional CheckFileName as logical ) as table =>
                         Table.Sort(
                             Table.SelectRows( 
                                 SourceAccTran, 
-                                each if prCheckFileName = true ?? false then Text.Contains( Text.Lower( [Name] ), "kontoutdrag" ) else true
+                                each if CheckFileName = true ?? false then Text.Contains( Text.Lower( [Name] ), "kontoutdrag" ) else true
                             ),
                             { "Date modified", Order.Descending }
                         ),
@@ -74,7 +74,7 @@ let AccTransAndBF = ( optional CheckFileName as logical ) as table =>
                         Table.Sort(
                             Table.SelectRows( 
                                 SourceBalanceFw, 
-                                each if prCheckFileName = true ?? false then Text.Contains( Text.Lower( [Name] ), "ib-ub" ) else true
+                                each if CheckFileName = true ?? false then Text.Contains( Text.Lower( [Name] ), "ib-ub" ) else true
                             ),
                             { "Date modified", Order.Descending }
                         ),
