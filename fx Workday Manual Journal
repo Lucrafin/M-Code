@@ -2,8 +2,11 @@ let KontoutdragManuall = ( optional CheckFileName as logical ) as table =>
 
     let
 
-        FolderPathStart = "\\office\aktiehandel\BackOffice Värdepapper Ekonomi\Filer\",
-        FolderPath = FolderPathStart & FolderPathEnd,
+        //FolderPathStart = "\\office\aktiehandel\BackOffice Värdepapper Ekonomi\Filer\",
+        //FolderPath = FolderPathStart & FolderPathEnd,
+
+        SourceAccTran = Folder.Files( "\\Skandianet.org\common\SE\LINK\Depaforsakring\WD\Kontoutdrag\2025\2501" ),
+        //SourceAccTran = Folder.Files( "\\office\aktiehandel\BackOffice Värdepapper Ekonomi\Filer\Test för Workday\Sally_TPS" ),
 
         // Extract file path from metadata after applying filter to the 'Name' column
         // and take first row of table sorted by 'Date modified' column
@@ -12,7 +15,7 @@ let KontoutdragManuall = ( optional CheckFileName as logical ) as table =>
                 Table.FirstN(
                     Table.Sort(
                         Table.SelectRows( 
-                            Folder.Files( FolderPathStart & FolderPathEnd ), 
+                            SourceAccTran, 
                             each if CheckFileName = true ?? false then Text.Contains( Text.Lower( [Name] ), "kontoutdrag" ) else true
                         ),
                         { "Date modified", Order.Descending }
@@ -24,7 +27,7 @@ let KontoutdragManuall = ( optional CheckFileName as logical ) as table =>
                 "File Path"
             ){0}[File Path],
         
-        Source = 
+        ExcelFile = 
             Table.PromoteHeaders( 
                 Excel.Workbook(
                     File.Contents(FilePath), null, true
@@ -35,7 +38,7 @@ let KontoutdragManuall = ( optional CheckFileName as logical ) as table =>
         FilterManual = 
             Table.Distinct(
                 Table.SelectRows( 
-                    Table.FillDown( Source, { "Ledger Account" } ),
+                    Table.FillDown( ExcelFile, { "Ledger Account" } ),
                     each not Text.Contains( Text.Lower( [Ledger Account] ), "total" ) and [Accounting Date] <> null and Text.Contains( Text.Lower( [Journal Source] ), "manual" )
                 ), {"Journal Sequence Number"}
             ),
@@ -69,7 +72,7 @@ let KontoutdragManuall = ( optional CheckFileName as logical ) as table =>
         documentation = [
             Documentation.Name =  " fxKontoutdragManuell ",
             Documentation.Description = " Work with Workday files and transform them into the appropriate format for later use. ",
-            Documentation.LongDescription = " The function extracts the file from this path '\\office\aktiehandel\BackOffice Värdepapper Ekonomi\Files\' along with FolderPathEnd. You must enter the valid FolderPathEnd parametar for the file you want to transform. CheckFileName is optional and has to be 'true' if you want to search after the word 'kontoutdrag' in the file name. Then it only keeps 'Manual Journals'. ",
+            Documentation.LongDescription = " The function extracts the file from this path '\\Skandianet.org\common\SE\LINK\Depaforsakring\WD\Kontoutdrag\2025\2501'. CheckFileName is optional and has to be 'true' if you want to search after the word 'kontoutdrag' in the file name. Then it only keeps 'Manual Journals'. ",
             Documentation.Category = " Workday ",
             Documentation.Source = " GitHub Lucrafin ",
             Documentation.Version = " 1.0 ",
