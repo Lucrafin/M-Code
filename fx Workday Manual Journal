@@ -2,9 +2,6 @@ let KontoutdragManuall = ( optional CheckFileName as logical ) as table =>
 
     let
 
-        //FolderPathStart = "\\office\aktiehandel\BackOffice Värdepapper Ekonomi\Filer\",
-        //FolderPath = FolderPathStart & FolderPathEnd,
-
         SourceAccTran = Folder.Files( "\\Skandianet.org\common\SE\LINK\Depaforsakring\WD\Kontoutdrag\2025\2501" ),
         //SourceAccTran = Folder.Files( "\\office\aktiehandel\BackOffice Värdepapper Ekonomi\Filer\Test för Workday\Sally_TPS" ),
 
