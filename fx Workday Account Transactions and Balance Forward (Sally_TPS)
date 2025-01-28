@@ -49,7 +49,7 @@ let AccTransAndBF = ( optional CheckFileName as logical ) as table =>
             SelectColumnsAccTrans = 
                 Table.SelectColumns(
                     SplitLAAccTrans,
-                    {"Account Number",  "Accounting Date",   "Journal Source", "Translated Amount",   "Product Level 5"}),
+                    {"Account Number",  "Accounting Date",   "Journal Source", "Translated Amount",   "Product Level 5", "Journal Sequence Number"}),
                     
             ChangedTypeAccTrans = 
                 Table.TransformColumnTypes(
@@ -59,7 +59,8 @@ let AccTransAndBF = ( optional CheckFileName as logical ) as table =>
                         {"Accounting Date", type date}, 
                         {"Journal Source", type text}, 
                         {"Translated Amount", type number}, 
-                        {"Product Level 5", Int64.Type}
+                        {"Product Level 5", Int64.Type},
+                        {"Journal Sequence Number", type text}
                     }
                 ),
 
@@ -104,6 +105,7 @@ let AccTransAndBF = ( optional CheckFileName as logical ) as table =>
                         each [ 
                                 Translated Amount = if Value.Is( [Column15], type text ) and [Column15] <> "" then "Translated Amount" else [Column15],
                                 Journal Source = if Value.Is( [Column15], type text ) and [Column15] <> "" then "Journal Source" else "Balance Forward",
+                                Journal Sequence Number = "Journal Sequence Number",
                                 Accounting Date = if Value.Is( [Column15], type text )   // Extract date from column 15 and write it to all rows except header
                                         then "Accounting Date"
                                         else Date.AddDays(
@@ -124,7 +126,7 @@ let AccTransAndBF = ( optional CheckFileName as logical ) as table =>
                                             )
                         ]
                     ),
-                    "Record", { "Translated Amount", "Journal Source", "Accounting Date" }
+                    "Record", { "Translated Amount", "Journal Source", "Accounting Date", "Journal Sequence Number" }
                 ),
 
             SelectColumnsBalanceFw = 
@@ -134,7 +136,7 @@ let AccTransAndBF = ( optional CheckFileName as logical ) as table =>
                             AddedColumnsBalanceFw, 
                             [PromoteAllScalars=true] 
                         ),
-                        {"Ledger Account Number", "Journal Source", "Product Level 5", "Translated Amount", "Accounting Date" }
+                        {"Ledger Account Number", "Journal Source", "Product Level 5", "Translated Amount", "Accounting Date", "Journal Sequence Number" }
                     ),
                     { { "Ledger Account Number", "Account Number" } }
                 ),
@@ -147,7 +149,8 @@ let AccTransAndBF = ( optional CheckFileName as logical ) as table =>
                         {"Product Level 5", Int64.Type}, 
                         {"Accounting Date", type date},
                         {"Translated Amount", type number},
-                        {"Journal Source", type text}
+                        {"Journal Source", type text},
+                        {"Journal Sequence Number", type text}
                     }
                 ),
                 
@@ -158,7 +161,7 @@ let AccTransAndBF = ( optional CheckFileName as logical ) as table =>
         documentation = [
             Documentation.Name =  " fxAccTransAndBF ",
             Documentation.Description = " Work with Workday files and transform them into the appropriate format for later use. ",
-            Documentation.LongDescription = " The function extracts the file from this path '\\Skandianet.org\common\SE\LINK\Depaforsakring\WD\Kontoutdrag\2025\2501'. CheckFileName is optional and has to be 'true' if you want to search after the words 'kontoutdrag' and 'ib-ub' in the file names. ",
+            Documentation.LongDescription = " The function extracts the file from this path '\\Skandianet.org\common\SE\LINK\Depaforsakring\WD\Kontoutdrag\2025\2501\'. CheckFileName is optional and has to be 'true' if you want to search after the words 'kontoutdrag' and 'ib-ub' in the file names. ",
             Documentation.Category = " Workday ",
             Documentation.Source = " GitHub Lucrafin ",
             Documentation.Version = " 1.0 ",
