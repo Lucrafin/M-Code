@@ -1,0 +1,13 @@
+Table.FromList(
+    List.Accumulate(
+        Source, 
+        {}, 
+        (b, n) => 
+            let 
+                l = List.Last( b, { 1, {} } ), 
+                f = Byte.From( ( List.Sum( l{1} ) ?? 0 ) + n < 51 ) 
+            in 
+                List.RemoveLastN( b, f ) & { { l{0} + 1 - f, { {}, l{1} }{f} & {n} } }
+    ), 
+    each {"Group" & Text.From(_{0}), Text.Combine(List.Transform(_{1}, Text.From), ", ")}, {"Groups", "Values"}
+)
