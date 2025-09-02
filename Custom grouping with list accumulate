@@ -37,3 +37,29 @@ let
 in
     A
 
+
+
+let
+    Source = Excel.CurrentWorkbook(){[Name="Table1"]}[Content],
+
+    R = Table.FromRows(
+        List.Accumulate(
+            Table.ToRows(Source),
+            {},
+            (s, c) =>
+                let
+                    l = List.Last(s, {}),
+                    i = Byte.From(c{0} = null),
+                    t = Text.From(c{2}),
+                    r = {
+                        { "", l{0} }{i} & { c{0}, "" }{i},
+                        { c{1}, l{1} & " - " & c{1} }{i},
+                        { t, l{2} & " - " & t }{i}
+                    }
+                in
+                    List.RemoveLastN(s, i) & { r }
+        ),
+        Table.ColumnNames(Source)
+    )
+in
+    R
