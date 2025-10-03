@@ -1,0 +1,48 @@
+let
+    // Load the source table named "Table1" from the current workbook
+    Source = Excel.CurrentWorkbook(){[Name="Table1"]}[Content],
+
+    // Split each row into a list: {number, name}
+    A = List.Transform(
+        Source[Text],
+        each Text.Split(Text.Remove(_, "."), " : ")
+    ),
+
+    // Determine the maximum hierarchy depth based on the length of the number part
+    N = List.Max(
+        List.Transform(A, each Text.Length(_{0}))
+    ),
+
+    // Build the result table by accumulating rows
+    R = Table.FromRows(
+        List.Accumulate(
+            A,
+            {{}, {List.Repeat({null}, N)}},
+            (s, c) =>
+                let
+                    // Check if the number ends with "1"
+                    f = Byte.From(Text.End(c{0}, 1) = "1"),
+                    // Determine the level based on the length of the number
+                    i = Text.Length(c{0})
+                in {
+                    // Append the number to the first accumulator (not used in final output)
+                    s{0} & {c{0}},
+
+                    // Update the second accumulator with a new or modified row
+                    List.RemoveLastN(s{1}, f) & {
+                        {
+                            // Create a new row with the name placed at the correct level
+                            List.ReplaceRange(List.Repeat({null}, N), i - 1, 1, {c{1}}),
+
+                            // Or update the last row with the name at the correct level
+                            List.ReplaceRange(List.Last(s{1}), i - 1, 1, {c{1}})
+                        }{f}
+                    }
+                }
+        ){1},
+
+        // Generate column names: Level1, Level2, ..., LevelN
+        List.Transform({1..N}, each "Level" & Text.From(_))
+    )
+in
+    R
