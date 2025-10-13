@@ -63,3 +63,34 @@ let
     )
 in
     R
+
+
+let
+    Source = Excel.CurrentWorkbook(){[Name="Table1"]}[Content],
+
+// Grouping the consecutive dates for two columns table
+
+    R = Table.FromRows(
+        List.Accumulate(
+            Table.ToRows(Source),
+            {},
+            (s, c) =>
+                let
+                    l = List.Last(s),
+                    i = Byte.From(
+                        Number.From(Date.From(c{0})) = 
+                        Number.From(Date.From(Text.End(l{0}?, 10))) + 1
+                    )
+                in
+                    List.RemoveLastN(s, i) &
+                    {
+                        {
+                            { c{0}, Text.Start(l{0}, 10) }{i} & " To " & c{0}, // Date Range
+                            { c{1}, l{1} + c{1} }{i} // Total
+                        }
+                    }
+        ),
+        { "Date Range", "Total" }
+    )
+in
+    R
