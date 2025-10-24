@@ -1,16 +1,38 @@
 let
+    // Load the table named "Table1" from the current Excel workbook
     Source = Excel.CurrentWorkbook(){[Name = "Table1"]}[Content],
+
+    // Transform the table using List.Accumulate to build a new list of rows
     R = Table.FromRows(
         List.Accumulate(
+            // Convert the source table into a list of rows
             Table.ToRows(Source),
+            // Start with an empty list as the accumulator
             {},
+            // Define the function to apply to each row 'c' and accumulator 's'
             (s, c) =>
                 let
-                    l = List.Last(s), i = Byte.From(c{2} = null)
+                    // Get the last row from the accumulated list
+                    l = List.Last(s),
+                    // Check if the 'Task' column (c{2}) is null; convert to 1 (true) or 0 (false)
+                    i = Byte.From(c{2} = null)
                 in
-                    List.RemoveLastN(s, i) & {{{c{0}, c{1}, c{2}, 0}, {l{0}, l{1}, l{2}, l{3} + c{1}}}{i}}
+                    // If 'Task' is null (i = 1), remove the last row from the accumulator
+                    // Then append a new row based on the value of 'i'
+                    List.RemoveLastN(s, i) &
+                    {
+                        // If i = 0 (Task is not null), create a new row with Amount = 0
+                        // If i = 1 (Task is null), add the Date value (c{1}) to the previous Amount
+                        {
+                            {c{0}, c{1}, c{2}, 0},                      // New task row
+                            {l{0}, l{1}, l{2}, l{3} + c{1}}             // Accumulated row
+                        }{i} // Select the appropriate row based on i
+                    }
         ),
+        // Define the column names for the resulting table
         {"Store", "Date", "Task", "Amount"}
     )
 in
+    // Return the final transformed table
     R
+
