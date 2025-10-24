@@ -1,38 +1,26 @@
 let
-    // Load the table named "Table1" from the current Excel workbook
+    // Load "Table1" from the workbook
     Source = Excel.CurrentWorkbook(){[Name = "Table1"]}[Content],
 
-    // Transform the table using List.Accumulate to build a new list of rows
+    // Build a new table by accumulating rows
     R = Table.FromRows(
         List.Accumulate(
-            // Convert the source table into a list of rows
-            Table.ToRows(Source),
-            // Start with an empty list as the accumulator
-            {},
-            // Define the function to apply to each row 'c' and accumulator 's'
+            Table.ToRows(Source), // Convert table to list of rows
+            {},                   // Start with empty list
             (s, c) =>
                 let
-                    // Get the last row from the accumulated list
-                    l = List.Last(s),
-                    // Check if the 'Task' column (c{2}) is null; convert to 1 (true) or 0 (false)
-                    i = Byte.From(c{2} = null)
+                    l = List.Last(s),                  // Last row in accumulator
+                    i = Byte.From(c{2} = null)         // 1 if Task is null, else 0
                 in
-                    // If 'Task' is null (i = 1), remove the last row from the accumulator
-                    // Then append a new row based on the value of 'i'
-                    List.RemoveLastN(s, i) &
+                    List.RemoveLastN(s, i) &           // Remove last row if Task is null
                     {
-                        // If i = 0 (Task is not null), create a new row with Amount = 0
-                        // If i = 1 (Task is null), add the Date value (c{1}) to the previous Amount
                         {
-                            {c{0}, c{1}, c{2}, 0},                      // New task row
-                            {l{0}, l{1}, l{2}, l{3} + c{1}}             // Accumulated row
-                        }{i} // Select the appropriate row based on i
+                            {c{0}, c{1}, c{2}, 0},      // New task row
+                            {l{0}, l{1}, l{2}, l{3} + c{1}} // Add Date to previous Amount
+                        }{i}                           // Pick row based on i
                     }
         ),
-        // Define the column names for the resulting table
-        {"Store", "Date", "Task", "Amount"}
+        {"Store", "Date", "Task", "Amount"}            // Column names
     )
 in
-    // Return the final transformed table
-    R
-
+    R // Return the final table
