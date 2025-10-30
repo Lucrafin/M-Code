@@ -1,0 +1,43 @@
+let
+    Source = Excel.CurrentWorkbook(){[Name="Table1"]}[Content],
+    R = List.Transform(
+        Source[Strings],
+        each
+            List.Sum(
+                List.Transform(
+                    List.Split(
+                        List.Transform(
+                            List.Select(
+                                List.Accumulate(
+                                    Text.ToList(_),
+                                    {},
+                                    (s, c) =>
+                                        let
+                                            l = List.Last(s, {}),
+                                            i = List.Contains({"0".."9"}, c),
+                                            j = List.Contains({"A".."z"}, List.Last(l)),
+                                            f = Byte.From(i <> j)
+                                        in
+                                            List.RemoveLastN(s, f) &
+                                            {
+                                                {
+                                                    {},
+                                                    {
+                                                        {},
+                                                        l
+                                                    }{f} & {c}
+                                                }{Byte.From(i)}
+                                            }
+                                ),
+                                each _ <> {}
+                            ),
+                            each Text.Combine(_)
+                        ),
+                        2
+                    ),
+                    each Number.From(_)
+                )
+            )
+    )
+in
+    R
